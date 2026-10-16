@@ -2,11 +2,12 @@ import {liveOutfits,makeRenderPrompt} from './live-core.mjs';
 import {latestTask} from './latest-task.mjs';
 const $=s=>document.querySelector(s),modes={real:'真人',ink:'小黑手绘',doll:'胖头娃娃'};
 const isLocal=['127.0.0.1','localhost','[::1]'].includes(location.hostname);
-let camera,renderer,renderAbort,decisionAbort,recognition,sessionTimer,imageURL,epoch=0,starting=false,imageBusy=false,cleanup=Promise.resolve();
-let capabilities={configured:false,providers:{xmax:{configured:false},aliyun:{configured:false}}};
+let camera,renderer,renderAbort,decisionAbort,recognition,sessionTimer,imageURL,pendingRender,epoch=0,starting=false,imageBusy=false,cleanup=Promise.resolve();
+let capabilities={configured:false,providers:{xmax:{configured:false},decart:{configured:false},aliyun:{configured:false}}};
 let selection={outfit:'casual',effect:'none',style:'real'};
 const say=(id,text,error=false)=>{$(id).textContent=text;$(id).classList.toggle('error',error);};
 const provider=()=>$('#provider').value;
+const videoNames={xmax:'Xmax',decart:'Decart Lucy'};
 function updateSelection(){
  $('#selectionName').textContent=`${liveOutfits.find(x=>x.id===selection.outfit).name} · ${modes[selection.style]}`;
  document.querySelectorAll('[data-look]').forEach(el=>el.setAttribute('aria-pressed',el.dataset.look===selection.outfit));
@@ -14,19 +15,20 @@ function updateSelection(){
 }
 function buttons(){
  $('#startRender').disabled=!camera||starting||imageBusy||!!renderer;
- $('#startRender').textContent=provider()==='xmax'?'开始 Xmax 实时变装 ↗':'拍一帧，用阿里云换装 ↗';
+ $('#startRender').textContent=provider()==='aliyun'?'拍一帧，用阿里云换装 ↗':`开始 ${videoNames[provider()]} 实时变装 ↗`;
  $('#stopRender').disabled=!renderer&&!starting&&!imageBusy&&!imageURL;$('#autoImage').disabled=provider()!=='aliyun';
 }
 function providerInfo(){
  const p=capabilities.providers[provider()];
- say('#providerHint',provider()==='xmax'?`连续视频 · ${p.configured?'后台已配置':'等待配置 XMAX_API_KEY'} · 单次最多 60 秒`:`单帧图片 · ${p.configured?'后台已配置':'等待配置 DASHSCOPE_API_KEY'} · 生成需等待，镜头仍保持开启`);buttons();
+ const hints={xmax:`连续视频 · ${p.configured?'后台已配置':'等待配置 XMAX_API_KEY'} · 1 积分/秒，现金价格待核实`,decart:`连续视频 · ${p.configured?'后台已配置':'等待配置 DECART_API_KEY'} · 标准模式 $0.02/秒，60 秒约 $1.20`,aliyun:`单帧图片 · ${p.configured?'后台已配置':'等待配置 DASHSCOPE_API_KEY'} · ${p.model==='qwen-image-2.0'?'北京标准价 ¥0.20/张':p.model==='qwen-image-2.1-turbo'?'北京标准价 ¥0.10/张':'按后台模型计费'} · 需要等待`};
+ say('#providerHint',hints[provider()]);buttons();
 }
 function clearImage(){if(imageURL)URL.revokeObjectURL(imageURL);imageURL=null;$('#imageOutput').removeAttribute('src');$('#imageOutput').hidden=true;}
 function showResult(label){$('#cameraVideo').classList.add('pip');$('#originalTag').classList.add('pip');$('#liveTag').textContent=label;$('#liveTag').hidden=false;}
 function stopRenderer(message='AI 已停止，当前显示原始摄像头画面。'){
  epoch++;decisionQueue.clear();videoQueue.clear();imageQueue.clear();decisionAbort?.abort();renderAbort?.abort();renderAbort=null;
- clearInterval(sessionTimer);const previous=renderer;renderer=null;starting=false;imageBusy=false;
- cleanup=cleanup.catch(()=>{}).then(()=>previous?.stop()).catch(()=>say('#rendererStatus','断开请求未确认，Xmax 临时额度和到期限制仍生效。',true));
+ clearInterval(sessionTimer);const previous=renderer,pending=pendingRender;renderer=null;pendingRender=null;starting=false;imageBusy=false;
+ cleanup=cleanup.catch(()=>{}).then(async()=>{await previous?.stop();if(pending){const late=await pending.catch(()=>null);await late?.stop();}}).catch(()=>say('#rendererStatus','视频资源释放未确认，请关闭页面后重试。',true));
  $('#xmaxOutput').classList.remove('ready');clearImage();$('#cameraVideo').classList.remove('pip');$('#originalTag').classList.remove('pip');$('#liveTag').hidden=true;
  $('#videoLabel').textContent=camera?'摄像头原始画面':'摄像头未开启';$('#sessionTime').textContent=camera?'仅本机预览':'只在你点击后开启';say('#rendererStatus',message);buttons();
 }
@@ -51,8 +53,8 @@ function cameraFrame(width=480){const v=$('#cameraVideo');if(!v.videoWidth)throw
 async function responseError(response,fallback){let text=fallback;try{text=(await response.json()).error||text;}catch{}throw new Error(text);}
 const videoQueue=latestTask(async(prompt,isCurrent)=>{
  const connection=renderer;if(!connection)return;
- try{await connection.update(prompt);if(isCurrent()&&connection===renderer)say('#rendererStatus','换装指令已更新，等待 Xmax 返回新画面。');}
- catch{if(connection===renderer)stopRenderer('Xmax 视频更新失败，请重新连接。');}
+ try{await connection.update(prompt);if(isCurrent()&&connection===renderer)say('#rendererStatus',`换装指令已更新，等待 ${connection.providerName} 返回新画面。`);}
+ catch{if(connection===renderer)stopRenderer('视频更新失败，请重新连接。');}
 });
 const imageQueue=latestTask(async(next,isCurrent)=>{
  if(!camera||provider()!=='aliyun')return;if(!capabilities.providers.aliyun.configured){setup();return;}
@@ -79,20 +81,21 @@ const decisionQueue=latestTask(async(prompt,isCurrent)=>{
  }catch(e){if(version===epoch&&isCurrent()&&e.name!=='AbortError')say('#decisionStatus',e.name==='TimeoutError'?'Jev 响应超时，请重试。':e.message,true);}
 });
 function decide(event){event?.preventDefault();if(!camera){say('#decisionStatus','先打开摄像头，让主角入场。',true);return;}const prompt=$('#livePrompt').value.trim();if(!prompt){say('#decisionStatus','先说说天气或想换的样子。',true);return;}decisionQueue.push(prompt);}
-function setup(){$('#setupStatus').textContent=`Jev：${capabilities.configured?'已配置':'待配置'}；Xmax：${capabilities.providers.xmax.configured?'已配置':'待配置'}；阿里云：${capabilities.providers.aliyun.configured?'已配置':'待配置'}。`;$('#setupDialog').showModal();}
+function setup(){$('#setupStatus').textContent=`Jev：${capabilities.configured?'已配置':'待配置'}；Xmax：${capabilities.providers.xmax.configured?'已配置':'待配置'}；Decart：${capabilities.providers.decart.configured?'已配置':'待配置'}；阿里云：${capabilities.providers.aliyun.configured?'已配置':'待配置'}。`;$('#setupDialog').showModal();}
 async function startRenderer(){
  if(!camera)return;if(provider()==='aliyun')return imageQueue.push({...selection});
- if(!capabilities.providers.xmax.configured){setup();return;}if(renderer||starting)return;
+ const id=provider(),name=videoNames[id];if(!capabilities.providers[id].configured){setup();return;}if(renderer||starting)return;
  starting=true;buttons();const version=epoch;renderAbort=new AbortController();const signal=renderAbort.signal;
- say('#rendererStatus','正在连接 Xmax。只有收到生成画面后才显示“实时生成”。');$('#stopRender').disabled=false;
+ say('#rendererStatus',`正在连接 ${name}。只有收到生成画面后才显示“实时生成”。`);$('#stopRender').disabled=false;
  let remaining=60;sessionTimer=setInterval(()=>{remaining--;$('#sessionTime').textContent=`本次剩余 ${remaining} 秒`;if(remaining<=0)stopRenderer('本次 60 秒体验结束，已发出停止请求。');},1000);
  try{
-  await cleanup;const {connectRenderer}=await import('../dist/xmax-client.js');if(version!==epoch)return;
-  const connection=await connectRenderer({stream:camera,prompt:makeRenderPrompt(selection),signal,target:$('#xmaxOutput'),
-   onFrame:()=>{if(version!==epoch)return;$('#xmaxOutput').classList.add('ready');showResult('Xmax 实时生成');$('#videoLabel').textContent='Xmax 连续视频换装';say('#rendererStatus','已收到 Xmax 生成画面，可以连续说冷、热切换衣服。');},
-   onError:message=>{if(version===epoch)stopRenderer(message);}});
-  if(version!==epoch){await connection.stop();return;}renderer=connection;videoQueue.push(makeRenderPrompt(selection));
- }catch(e){if(version===epoch&&e.name!=='AbortError')stopRenderer(`Xmax 连接未完成：${e.message}`);}
+  await cleanup;if(version!==epoch)return;const {connectRenderer}=id==='decart'?await import('../dist/decart-client.js'):await import('../dist/xmax-client.js');if(version!==epoch)return;
+  const attempt=connectRenderer({stream:camera,prompt:makeRenderPrompt(selection),signal,target:$('#xmaxOutput'),
+   onFrame:()=>{if(version!==epoch)return;$('#xmaxOutput').classList.add('ready');showResult(`${name} 实时生成`);$('#videoLabel').textContent=`${name} 连续视频换装`;say('#rendererStatus',`已收到 ${name} 生成画面，可以连续说冷、热切换衣服。`);},
+   onError:message=>{if(version===epoch)stopRenderer(message);}});pendingRender=attempt;
+  const connection=await attempt;if(pendingRender===attempt)pendingRender=null;
+  if(version!==epoch){await connection.stop();return;}connection.providerName=name;renderer=connection;videoQueue.push(makeRenderPrompt(selection));
+ }catch(e){if(version===epoch&&e.name!=='AbortError')stopRenderer(`${name} 连接未完成：${e.message}`);}
  finally{if(version===epoch){starting=false;buttons();}}
 }
 $('#liveOutfits').innerHTML=liveOutfits.map(x=>`<button type="button" data-look="${x.id}" aria-pressed="${x.id===selection.outfit}"><b>${x.icon}</b>${x.name}</button>`).join('');
@@ -119,5 +122,5 @@ $('#snapshotButton').addEventListener('click',()=>{
 });
 window.addEventListener('pagehide',stopCamera);document.addEventListener('visibilitychange',()=>{if(document.hidden)stopCamera();});
 updateSelection();providerInfo();
-if(isLocal)fetch('./api/status').then(r=>r.json()).then(data=>{capabilities=data;$('#backendStatus').textContent=`Jev ${data.configured?'已接通':'待配置'} · Xmax ${data.providers.xmax.configured?'已配置':'待配置'} · 阿里云 ${data.providers.aliyun.configured?'已配置':'待配置'}`;providerInfo();}).catch(()=>say('#rendererStatus','请启动本地服务。',true));
+if(isLocal)fetch('./api/status').then(r=>r.json()).then(data=>{capabilities=data;$('#backendStatus').textContent=`Jev ${data.configured?'已接通':'待配置'} · Xmax ${data.providers.xmax.configured?'已配置':'待配置'} · Decart ${data.providers.decart.configured?'已配置':'待配置'} · 阿里云 ${data.providers.aliyun.configured?'已配置':'待配置'}`;providerInfo();}).catch(()=>say('#rendererStatus','请启动本地服务。',true));
 else say('#rendererStatus','公开页仅展示界面。真实换装请下载代码并启动本地服务，不在公开页填写密钥。');

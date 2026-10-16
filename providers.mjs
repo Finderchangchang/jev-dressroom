@@ -7,14 +7,31 @@ export function providerConfig(env=process.env){
  const configuredBase=env.DASHSCOPE_BASE_URL||'https://dashscope.aliyuncs.com';
  const base=new URL(configuredBase);
  if(base.protocol!=='https:'||!/(^|\.)(aliyuncs\.com)$/.test(base.hostname))throw new Error('DASHSCOPE_BASE_URL 必须是阿里云 HTTPS 地址。');
- return {xmaxKey:env.XMAX_API_KEY?.trim(),region,xmaxBase:region==='global'?'https://api.xmax.ai/open/api/v1':'https://api.xmaxai.com/open/api/v1',
+ return {decartKey:env.DECART_API_KEY?.trim(),xmaxKey:env.XMAX_API_KEY?.trim(),region,xmaxBase:region==='global'?'https://api.xmax.ai/open/api/v1':'https://api.xmaxai.com/open/api/v1',
   aliKey:env.DASHSCOPE_API_KEY?.trim(),aliBase:base.origin,aliModel:env.ALI_IMAGE_MODEL||'qwen-image-2.1-turbo',sessionSeconds:60};
 }
 function failure(message,status=502){return Object.assign(new Error(message),{status});}
 export function createProviders(config,{request=fetch,now=Date.now,schedule=setTimeout}={}){
- let session=null,starting=false,aliBusy=false,lastAli=0;
+ let session=null,starting=false,aliBusy=false,lastAli=0,decartStarting=false,decartNext=0;
  const status=()=>({xmax:{configured:!!config.xmaxKey,mode:'video',model:'x2.0',region:config.region,sessionSeconds:config.sessionSeconds},
+  decart:{configured:!!config.decartKey,mode:'video',model:'lucy-2.5',sessionSeconds:config.sessionSeconds},
   aliyun:{configured:!!config.aliKey,mode:'image',model:config.aliModel}});
+ async function issueDecart(origin){
+  if(!config.decartKey)throw failure('Decart 尚未配置。请在后台设置 DECART_API_KEY。',503);
+  let url;try{url=new URL(origin);}catch{throw failure('需要有效的本机来源。',400);}
+  if(!['http:','https:'].includes(url.protocol)||!['127.0.0.1','localhost','[::1]'].includes(url.hostname)||url.origin!==origin)throw failure('需要有效的本机来源。',400);
+  if(decartStarting||now()<decartNext)throw failure('上一份 Decart 凭据尚在保护窗口内，请稍等再开始。',429);
+  decartStarting=true;
+  try{
+   const response=await request('https://api.decart.ai/v1/client/tokens',{method:'POST',headers:{'X-API-KEY':config.decartKey,'Content-Type':'application/json'},
+    body:JSON.stringify({expiresIn:20,allowedModels:['lucy-2.5'],allowedOrigins:[origin],constraints:{realtime:{maxSessionDuration:config.sessionSeconds}}}),signal:AbortSignal.timeout(15000)});
+   if(!response.ok)throw failure(response.status===401?'Decart 密钥未通过验证。':'Decart 临时凭据获取失败，请检查额度与配置。');
+   const data=await response.json();if(typeof data.apiKey!=='string'||!data.apiKey.startsWith('ek_')||!Number.isFinite(Date.parse(data.expiresAt)))throw failure('Decart 没有返回有效临时凭据。');
+   // Signed Decart tokens cannot be revoked. Cover their 20s dial window plus the 60s server session cap.
+   decartNext=now()+80000;
+   return {apiKey:data.apiKey,expiresAt:data.expiresAt,model:'lucy-2.5',sessionSeconds:config.sessionSeconds};
+  }finally{decartStarting=false;}
+ }
  async function xmax(path,method,body){
   const r=await request(config.xmaxBase+path,{method,headers:{'X-Api-Key':config.xmaxKey,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(15000)});
   const data=await r.json();
@@ -66,5 +83,5 @@ export function createProviders(config,{request=fetch,now=Date.now,schedule=setT
   }catch(e){if(e.status)throw e;throw failure(e.name==='TimeoutError'?'阿里云等待超时，任务可能仍在云端完成；未自动重试。':'阿里云连接失败；未自动重试。');}
   finally{aliBusy=false;}
  }
- return {status,issue,revoke,image};
+ return {status,issue,issueDecart,revoke,image};
 }

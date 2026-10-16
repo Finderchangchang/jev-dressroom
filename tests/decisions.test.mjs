@@ -53,7 +53,7 @@ test('all illustrated combinations have a renderable SVG',()=>{
 });
 test('local server serves only public assets and rejects missing key / cross-site calls',async()=>{
  const port=19000+Math.floor(Math.random()*10000);
- const child=spawn(process.execPath,['server.mjs'],{cwd:new URL('..',import.meta.url),env:{...process.env,PORT:String(port),TYPESAFE_API_KEY:'',XMAX_API_KEY:'',DASHSCOPE_API_KEY:'',DASHSCOPE_BASE_URL:''},stdio:['ignore','pipe','pipe']});
+ const child=spawn(process.execPath,['server.mjs'],{cwd:new URL('..',import.meta.url),env:{...process.env,PORT:String(port),TYPESAFE_API_KEY:'',XMAX_API_KEY:'',DECART_API_KEY:'',DASHSCOPE_API_KEY:'',DASHSCOPE_BASE_URL:''},stdio:['ignore','pipe','pipe']});
  try{
   await Promise.race([once(child.stdout,'data'),new Promise((_,reject)=>setTimeout(()=>reject(new Error('server startup timed out')),5000).unref())]);
   const base=`http://127.0.0.1:${port}`;
@@ -62,11 +62,12 @@ test('local server serves only public assets and rejects missing key / cross-sit
   for(const url of ['/server.mjs','/.env','/.git/config','/tests/decisions.test.mjs'])assert.equal((await fetch(base+url)).status,404);
   assert.equal((await fetch(base+'/api/decide',{method:'POST',headers:{'Content-Type':'application/json'},body:'{"prompt":"你好"}'})).status,503);
   assert.equal((await fetch(base+'/api/decide',{method:'POST',headers:{Origin:'https://evil.example','Content-Type':'application/json'},body:'{"prompt":"你好"}'})).status,403);
-  for(const endpoint of ['/api/xmax-token','/api/xmax-stop','/api/aliyun-image']){
+  for(const endpoint of ['/api/xmax-token','/api/xmax-stop','/api/decart-token','/api/aliyun-image']){
    assert.equal((await fetch(base+endpoint,{method:'POST',headers:{Origin:'https://evil.example','Content-Type':'application/json'},body:'{}'})).status,403);
    assert.equal((await fetch(base+endpoint,{method:'POST',headers:{'Content-Type':'text/plain'},body:'{}'})).status,415);
   }
   assert.equal((await fetch(base+'/api/xmax-token',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status,503);
+  assert.equal((await fetch(base+'/api/decart-token',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status,503);
   assert.equal((await fetch(base+'/api/aliyun-image',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status,503);
   const rebound=await new Promise((resolve,reject)=>{http.get(base+'/api/status',{headers:{Host:'evil.example'}},res=>{res.resume();resolve(res.statusCode);}).on('error',reject);});assert.equal(rebound,403);
  }finally{child.kill();await once(child,'exit');}

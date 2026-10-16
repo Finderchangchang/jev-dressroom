@@ -18,7 +18,7 @@ export const server=http.createServer(async(req,res)=>{
  try{
   if(!['127.0.0.1','localhost','[::1]'].includes(new URL(`http://${req.headers.host}`).hostname))return json(res,403,{error:'服务仅供本机访问。'});
   if(url.pathname==='/api/status'&&req.method==='GET') return json(res,200,{configured:!!key,model:MODEL,providers:providers.status()});
-  if(['/api/xmax-token','/api/xmax-stop','/api/aliyun-image'].includes(url.pathname)){
+  if(['/api/xmax-token','/api/xmax-stop','/api/decart-token','/api/aliyun-image'].includes(url.pathname)){
    if(req.method!=='POST')return json(res,405,{error:'请使用 POST。'});
    if(!allowedOrigin(req))return json(res,403,{error:'不接受跨站请求。'});
    if(!String(req.headers['content-type']).startsWith('application/json'))return json(res,415,{error:'需要 JSON 请求。'});
@@ -26,6 +26,7 @@ export const server=http.createServer(async(req,res)=>{
    let payload;try{payload=JSON.parse(body);}catch{return json(res,400,{error:'输入格式不正确。'});}
    try{
     if(url.pathname==='/api/xmax-token')return json(res,200,await providers.issue());
+    if(url.pathname==='/api/decart-token')return json(res,200,await providers.issueDecart(req.headers.origin||`http://${req.headers.host}`));
     if(url.pathname==='/api/xmax-stop'){await providers.revoke(payload.id);return json(res,200,{stopped:true});}
     const image=await providers.image(payload);
     res.writeHead(200,{'Content-Type':image.type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Image-Model':image.model,'X-Elapsed-Ms':String(image.elapsedMs)});return res.end(image.bytes);

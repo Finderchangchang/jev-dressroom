@@ -1,5 +1,13 @@
 # 验证记录 · 2026-10-16
 
+## 新增 Decart 与统一价格表
+
+2026-10-16 增加 Decart Lucy 2.5 标准模式。页面现可选择 Xmax / Decart 连续视频、阿里云单帧图片，共用同一 Jev 决策。页面选择服务时显示单价，并可展开三家费用表和假设用量估算。Decart 快速模式仅列价供比较，不在接入配置中启用。
+
+新增 8 项测试，合计 28 项通过，覆盖 Decart 凭据的模型/Origin/时长限制、并发签发保护、错误脱敏、同一会话更新、首帧显示、停止与取消时释放轨道、迟到连接处理和禁止自动重连。使用真实 SDK 离线确认 Lucy 2.5 模型定义（720p），构建得到按需加载的 Decart 入口约 534KB。没有下载本地模型权重。
+
+本机未配置 DECART_API_KEY，因此没有发起实际 Decart 视频生成。上述模拟 SDK 生命周期测试不代表生成效果、摄像头设备和实际语音链路已验收。新增价格来自 [Decart 官方定价](https://docs.platform.decart.ai/getting-started/pricing)，临时凭据约束来自 [Client Tokens](https://docs.platform.decart.ai/getting-started/client-tokens) 与已安装官方 SDK 0.2.12。
+
 本次目标是让同一网页支持 Jev 决策、Xmax 连续视频和阿里云单帧换装。服务端不记录 Key、输入帧或生成历史；以下测试产物位于忽略的 output 目录，没有上传个人摄像头画面。
 
 ## 已实际请求的云端链路
