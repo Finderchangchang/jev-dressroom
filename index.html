@@ -1,63 +1,17 @@
-<!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#fafaf6">
-  <meta name="description" content="今天，穿成什么精神状态？一句话让 Jev 1.14 挑一身，切换小黑、胖头娃娃和真人造型。JevLand 原创开源换装实验。">
-  <meta property="og:title" content="班味换装间 · Jev Dressroom">
-  <meta property="og:description" content="一句话，一身戏。让 Jev 给你的精神状态配一套衣服。">
-  <meta property="og:type" content="website">
-  <title>班味换装间 · JevLand</title>
-  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./src/styles.css">
-</head>
-<body>
-  <a class="skip" href="#scene">跳到换装区</a>
-  <header class="site-header shell">
-    <a class="brand" href="https://jevland.com/" target="_blank" rel="noopener noreferrer"><img src="./assets/favicon.svg" alt="" width="34" height="34"><strong>JevLand</strong><span class="brand-divider"></span><span class="brand-lab">小实验 / 001</span></a>
-    <nav aria-label="主导航"><button class="text-btn" id="aboutButton">怎么玩 <span>↗</span></button><a class="github-link" href="https://github.com/Finderchangchang/jev-dressroom" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.86c-2.78.6-3.37-1.18-3.37-1.18-.45-1.15-1.11-1.46-1.11-1.46-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.89 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.64-1.34-2.22-.25-4.55-1.11-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0 1 12 6.83c.85 0 1.71.11 2.51.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg><span>GitHub</span><span>↗</span></a></nav>
-  </header>
-  <main class="shell">
-    <section class="intro">
-      <div><p class="eyebrow"><span class="tiny-star">✳</span> A LITTLE WARDROBE FOR BIG FEELINGS</p><h1>今天，穿成什么<br><span class="title-mark">精神状态？<svg viewBox="0 0 420 15" preserveAspectRatio="none" aria-hidden="true"><path d="M3 9Q156-1 416 6M30 13Q216 4 389 11"/></svg></span></h1></div>
-      <div class="intro-aside"><p>班可以上，班味不必穿在身上。<br>说说你的今天，让 Jev 帮你选一身。</p><button id="connectionButton" class="connection"><span class="status-dot"></span><span id="connectionText">离线试玩 · 随时开换</span><span>↗</span></button></div>
-    </section>
-    <section class="workbench" aria-label="班味换装间">
-      <div class="fitting-room">
-        <div class="room-toolbar"><span class="room-title"><i></i> 你的试衣间</span><div class="style-switch" role="group" aria-label="角色画风"><button data-style="ink" aria-pressed="true">小黑手绘</button><button data-style="doll" aria-pressed="false">胖头娃娃</button><button data-style="photo" aria-pressed="false">真人造型</button></div></div>
-        <div id="scene" class="scene" tabindex="-1">
-          <span class="scene-number">LOOK <b id="lookNumber">01</b> / YOUR DAILY ALTER EGO</span>
-          <div class="scribble scribble-left">人在工位<br>心在旷野<svg viewBox="0 0 100 72" aria-hidden="true"><path d="M7 9q9 43 75 40m-14-13 18 13-18 8"/></svg></div>
-          <div class="scribble scribble-right"><span id="sceneNote">今日宜：准点消失</span><svg viewBox="0 0 80 45" aria-hidden="true"><path d="M69 3Q41 0 10 33m1-14-3 17 18-3"/></svg></div>
-          <div class="stage-art" id="stageArt" role="img" aria-label="穿着薄荷卫衣的小黑手绘角色"></div>
-          <span class="photo-disclosure" id="photoDisclosure" hidden>AI 原创人物 · 整套造型示意</span>
-          <div class="floor-line"></div><div class="scene-tag"><span>✳</span><span id="lookTag">下班失踪人口</span></div>
-          <button id="shuffleButton" class="shuffle" aria-label="随机换一身" title="随机换一身"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m17 3 4 4-4 4M3 7h4c5 0 5 10 10 10h4m-4-4 4 4-4 4M3 17h4c2 0 3-2 5-5m2-3c1-1 2-2 3-2h4"/></svg></button>
-        </div>
-        <div class="look-description"><div><span class="micro-label">今日人设</span><h2 id="lookName">下班失踪人口</h2><p id="lookCaption">消息可以未读，快乐不能迟到。</p></div><div class="look-actions"><button class="icon-btn" id="saveButton" aria-label="收藏这套" title="收藏这套">♡</button><button class="save-image" id="exportButton"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5"/></svg>存成图片</button></div></div>
-      </div>
-      <div class="control-room">
-        <form id="outfitForm" class="prompt-panel">
-          <div class="section-heading"><h2><span>01</span> 今天是什么局？</h2><span class="small-note">一句话就够</span></div>
-          <label for="prompt" class="sr-only">描述今天的场景和心情</label><div class="prompt-box"><textarea id="prompt" maxlength="360" rows="3" placeholder="比如：周五 17:59，老板突然说再对齐一下……">周五下班，谁也别想找到我。</textarea><span id="charCount">17 / 360</span></div>
-          <div class="presets" aria-label="试试这些场景"><button type="button" data-preset="offwork">✧ 准点下班</button><button type="button" data-preset="client">↻ 甲方改稿</button><button type="button" data-preset="rain">☂ 雨天通勤</button><button type="button" data-preset="space">☄ 想离开地球</button><button type="button" data-preset="date">♡ 约会装酷</button><button type="button" data-preset="cook">♧ 今天掌勺</button></div>
-          <button class="generate" id="generateButton" type="submit"><span>让 Jev 给我整一身</span><span class="button-arrow">↗</span></button>
-          <div class="request-status" role="status" aria-live="polite" id="requestStatus">先试一身，也可以在下面自己搭。</div>
-        </form>
-        <section class="wardrobe-panel" aria-label="我的衣柜">
-          <div class="section-heading"><h2><span>02</span> 衣柜里有点东西</h2><span class="small-note">点一件，马上换</span></div>
-          <div class="wardrobe-tabs" role="group" aria-label="衣物分类"><button data-category="outfit" aria-pressed="true">整套 <span>8</span></button><button data-category="head" aria-pressed="false">头上 <span>6</span></button><button data-category="prop" aria-pressed="false">手边 <span>8</span></button></div>
-          <div id="wardrobeGrid" class="wardrobe-grid"></div>
-          <p class="wardrobe-note" id="wardrobeNote">搭配没有标准答案，有精神状态就行。</p>
-        </section>
-      </div>
-    </section>
-    <section class="decision-strip" aria-label="本次选择结果"><div><span class="decision-spark">✳</span><div><span class="micro-label" id="decisionSource">离线规则试玩</span><p id="decisionSummary">薄荷卫衣 + 耳机 + 冰咖啡，一键切换下班人格。</p></div></div><button class="text-btn" id="detailsButton">看看怎么选的 <span>↗</span></button></section>
-    <section class="saved-section"><div class="saved-heading"><div><p class="eyebrow">KEEP THE GOOD ONES</p><h2>我的精神衣橱 <span id="savedCount">0</span></h2></div><p>好看未必，有梗就存。</p></div><div id="savedGrid" class="saved-grid"><div class="empty-closet"><span>♡</span><p>第一套收藏，等你来挂。<br><small>点试衣间的爱心，留住今天的精神状态。</small></p></div></div></section>
-  </main>
-  <footer class="shell"><a class="footer-brand" href="https://jevland.com/" target="_blank" rel="noopener noreferrer">JevLand <span>做点有意思的。</span> ↗</a><p>原创换装实验 · MIT 开源 · 非 TypeSafe 官方产品</p><button class="text-btn" id="privacyButton">数据与说明</button></footer>
-  <dialog id="infoDialog"><form method="dialog"><button class="dialog-close" aria-label="关闭弹窗">×</button></form><div id="dialogContent"></div></dialog>
-  <div id="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./src/app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#fafaf6"><title>Jev Live · 说一句，换一身</title><link rel="icon" href="./assets/favicon.svg"><link rel="stylesheet" href="./src/live.css"></head>
+<body><header><a class="brand" href="https://jevland.com/" target="_blank" rel="noopener"><img src="./assets/favicon.svg" alt="" width="32" height="32">JevLand <span>LIVE LAB</span></a><nav><span id="backendStatus">摄像头实时换装</span><button id="settingsButton">连接说明 ↗</button><a href="https://github.com/Finderchangchang/jev-dressroom" target="_blank" rel="noopener">GitHub ↗</a></nav></header>
+<main><section class="heading"><div><p class="eyebrow">YOUR CAMERA. YOUR NEXT LOOK.</p><h1>说一句，<em>换一身。</em></h1></div><p>“明天冷一点。” “换件短袖。”<br>摄像头里的你，跟着想法变。</p></section>
+<div class="workspace"><section class="mirror-panel"><div class="panel-head"><span><i id="cameraDot"></i><b id="videoLabel">摄像头未开启</b></span><span id="sessionTime">只在你点击后开启</span></div><div class="mirror" id="mirror"><div id="xmaxOutput"></div><img id="imageOutput" alt="阿里云生成的单帧换装图片" hidden><video id="cameraVideo" autoplay muted playsinline hidden></video><div id="cameraPlaceholder"><svg viewBox="0 0 80 80" aria-hidden="true"><rect x="12" y="24" width="56" height="39" rx="8"/><path d="m28 24 5-9h14l5 9"/><circle cx="40" cy="43" r="12"/></svg><h2>这一回，主角是你。</h2><p>打开摄像头，看见真实的自己。<br>说冷穿外套，说热换短袖。</p><button id="startCamera" class="primary">打开摄像头 ↗</button></div><span id="originalTag" hidden>原始画面</span><span id="liveTag" hidden>实时生成</span></div><div class="mirror-tools"><button id="cameraToggle" disabled>关闭摄像头</button><button id="snapshotButton" disabled>保存当前画面 ↓</button><button id="stopRender" disabled>停止 AI / 返回镜头</button></div><p class="camera-note">镜头默认仅在本机预览。Xmax 开始后传输视频；阿里云每次只发送一帧。语音识别由浏览器提供。</p></section>
+<section class="controls"><div class="section-title"><span>01</span><h2>告诉它，接下来怎么穿</h2></div><form id="liveForm"><div class="input-wrap"><label class="sr-only" for="livePrompt">描述天气、穿搭或整活想法</label><textarea id="livePrompt" maxlength="360" rows="3">明天天气冷，给我换件保暖的厚外套。</textarea><button type="button" id="voiceButton" title="语音输入">🎙 说一句</button></div><div class="chips"><button type="button" data-prompt="明天天气冷，给我换件保暖的厚外套。">❄ 明天冷</button><button type="button" data-prompt="明天很热，帮我换成清凉短袖。">☀ 明天热</button><button type="button" data-prompt="明天有雨，穿一件黄色雨衣。">☂ 下雨了</button><button type="button" data-prompt="我要去面试，换套正式西装。">◇ 去面试</button><button type="button" data-prompt="给我换一身宇航服，再把背景变成月球。">✧ 离开地球</button></div><label class="check"><input type="checkbox" id="useFrame" checked>让 Jev 结合当前穿着判断</label><button class="primary wide" id="decideButton" type="submit">让 Jev 决定怎么换 ↗</button></form><p id="decisionStatus" class="status" role="status" aria-live="polite">先开启摄像头，再说说你的想法。</p>
+<div class="section-title second"><span>02</span><h2>你想以什么样子出场</h2></div><div class="style-options" role="group" aria-label="呈现方式"><button data-mode="real" aria-pressed="true">真人换装</button><button data-mode="ink" aria-pressed="false">小黑手绘</button><button data-mode="doll" aria-pressed="false">胖头娃娃</button></div><div class="outfits" id="liveOutfits"></div><div class="selection"><span>当前方案</span><strong id="selectionName">休闲卫衣 · 真人</strong><p id="selectionSource">尚未请求 Jev</p></div>
+<label class="provider-label" for="provider">生成方式</label><select id="provider"><option value="xmax">Xmax · 连续视频</option><option value="aliyun">阿里云 · 单帧换装图片</option></select><p id="providerHint" class="status"></p>
+<label class="check"><input id="autoImage" type="checkbox">阿里云：说完一句后自动生成一张（每张计费）</label>
+<button class="primary wide renderer" id="startRender" disabled>开始 Xmax 实时变装 ↗</button><p id="rendererStatus" class="status" role="status" aria-live="polite">摄像头和 Jev 负责输入与选择，渲染服务负责改变画面。</p><p class="fee-note">Xmax 单次最多 60 秒 / 60 积分，关闭插帧与录制。阿里云一次一张，不自动重试。两家都在云端生成，本机不下载模型。</p></section></div>
+<section class="how"><div><b>01 / CAMERA</b><p>打开镜头</p></div><span>→</span><div><b>02 / JEV 1.14</b><p>理解天气，选出衣服</p></div><span>→</span><div><b>03 / LIVE RENDER</b><p>在你身上实时呈现</p></div></section><footer><a href="https://jevland.com/">JevLand · 做点有意思的 ↗</a><span>先看到你，再改变你。非 TypeSafe 官方产品。</span></footer></main>
+<dialog id="setupDialog"><button id="closeSetup" aria-label="关闭">×</button><p class="eyebrow">CAMERA → JEV → YOUR LOOK</p><h2>同一个镜头，两种玩法。</h2><p>Jev 1.14 判断冷、热与整活场景。Xmax 把换装作用到连续视频；阿里云编辑截取的一帧，生成静态图片，需要等待。</p><p id="setupStatus"></p><p>后台配置一次，使用者无需填写密钥。Xmax 浏览器端只拿短期凭据；阿里云 Key 留在本机后端。公开 GitHub Pages 没有后端，请在本地运行真实换装。</p><pre>npm ci
+npm run build
+# 在后台环境配置 TYPESAFE_API_KEY
+# Xmax: XMAX_API_KEY，XMAX_REGION=china 或 global
+# 阿里云: DASHSCOPE_API_KEY，DASHSCOPE_BASE_URL（选填）
+npm start</pre><p>镜头预览不上传；请求 Jev 时只发送你确认的一帧和文字；启动实时生成后，连续视频才会发给渲染方。不在服务端保存画面。</p><a href="https://github.com/Finderchangchang/jev-dressroom" target="_blank" rel="noopener">项目代码 ↗</a></dialog>
+<script type="module" src="./src/live.js"></script></body></html>

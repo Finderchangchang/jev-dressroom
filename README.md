@@ -1,97 +1,85 @@
-# 班味换装间 · Jev Dressroom
+# Jev Live · 说一句，换一身
 
-**今天，穿成什么精神状态？**
+打开摄像头，说“明天冷”换厚外套，说“明天热”换短袖。Jev 1.14 负责理解场景；Xmax 和阿里云负责生成画面。浅色界面，支持真人、小黑手绘、胖头娃娃和宇航服、纸皇冠、飘雪等玩法。
 
-一句话描述今天的场景，让 Jev 1.14 从衣柜里挑出整套、头饰和道具。切换小黑手绘、胖头娃娃、真人造型，把精神状态穿出来。
+[界面预览](https://finderchangchang.github.io/jev-dressroom/) · [JevLand 中文社区](https://jevland.com/) · [验证记录](docs/validation.md)
 
-[在线试玩](https://finderchangchang.github.io/jev-dressroom/) · [JevLand 中文社区](https://jevland.com/) · [模型文档](https://docs.typesafe.ai/models)
+| 方式 | 行为 | 当前验证 |
+| --- | --- | --- |
+| Xmax X2.0 | 摄像头连续视频；同一会话更新冷/热、画风和效果 | SDK 适配与生命周期测试通过；缺少 Xmax Key，尚未验证真实生成 |
+| 阿里云 Qwen Image | 截取当前一帧，生成换装图片；原始镜头继续预览 | 已用虚构人物测试图真实生成外套、短袖；不等于真人摄像头验收 |
 
-![班味换装间浅色界面](assets/preview.png)
+公开 GitHub Pages 只提供静态界面，没有公共共享密钥或生成后端。真实换装需要本地运行。旧版预制角色游戏保留在 `/demo.html`，与摄像头模式分开。
 
-## 玩什么
+## 运行
 
-- 3 种画风：原创小黑线稿、胖头角色、AI 真人造型。
-- 8 套衣服、6 个头饰、8 件道具；两种手绘支持自由组合。
-- 场景预设、任意文本输入、随机搭配。
-- 最多收藏 12 套，保存在当前浏览器；导出 960 × 1200 PNG。
-- 无 Key 可以离线试玩。连接 TypeSafe 后显示真实返回的概率、置信度和耗时。
-- 白色和淡黄绿色界面，支持手机、键盘操作和减少动态效果偏好。
-
-## 本地运行
-
-需要 Node.js 20+。**没有第三方运行依赖，无需 npm install。**
+需要 Node.js 20+。
 
 ```sh
 git clone https://github.com/Finderchangchang/jev-dressroom.git
 cd jev-dressroom
+npm ci
+npm run build
 npm start
 ```
 
-打开 `http://127.0.0.1:8894`。
+打开 `http://127.0.0.1:8894/`。`/camera.html` 也可进入。
 
-真实 Jev 调用：在服务端设置 `TYPESAFE_API_KEY` 后重新启动。密钥只由本地后端读取，不会发到浏览器。
+在启动服务的终端配置环境变量，参考 [.env.example](.env.example)。本项目不会自动读取 `.env`。Windows 已保存到用户环境变量时，可以在 PowerShell 中读取指定项后启动：
 
 ```powershell
-# Windows：已在用户环境变量里设置 Key 时
-$env:TYPESAFE_API_KEY = [Environment]::GetEnvironmentVariable('TYPESAFE_API_KEY', 'User')
+foreach ($name in 'TYPESAFE_API_KEY','XMAX_API_KEY','XMAX_REGION','DASHSCOPE_API_KEY','DASHSCOPE_BASE_URL','ALI_IMAGE_MODEL') {
+  $value = [Environment]::GetEnvironmentVariable($name, 'User')
+  if ($value) { [Environment]::SetEnvironmentVariable($name, $value, 'Process') }
+}
 npm start
 ```
 
-也可以在本地页面的连接按钮里输入自己的 TypeSafe Key。此方式仅存在页面内存，经本机服务发送到 `https://api.typesafe.ai/v1/systemone`；刷新清除，不存入 localStorage。公开静态页不收取 Key，并提供本地运行指引。
+- `TYPESAFE_API_KEY`：Jev 判断。固定调用 `jev-1.14.0`，避免旧别名指向不同版本。
+- `XMAX_API_KEY`：Xmax 平台长期 Key，仅留在后端。`XMAX_REGION=china` 为国内，`global` 为海外，需与账号对应。
+- `DASHSCOPE_API_KEY`：阿里云百炼 Key。选填 `DASHSCOPE_BASE_URL`，支持北京/新加坡官方地址及业务空间专属域名；程序自动取其 origin，使用图像 API 路径。Key、模型与地域必须对应。
+- `ALI_IMAGE_MODEL`：默认 `qwen-image-2.1-turbo`；也可设置 `qwen-image-2.0`。模型只由服务端配置，页面不任意选择高价模型。
 
-## Jev 做了什么
+普通使用者无需填写 Key。Xmax 浏览器端仅收到临时 Key；TypeSafe、阿里云和 Xmax 长期 Key 均不进入前端、Git 或本地存储。
 
-程序固定调用 **`jev-1.14.0`**。截至 2026-10-16，官方文档列出它为最新版本；`jev-latest` 仍指向 `jev-1.13.0`，因此不使用这个别名。
+## 怎么玩
 
-一条请求包含三道 Choice：
+1. 点击打开摄像头，允许本地网页使用设备。
+2. 打字或点“说一句”，说“明天冷”“明天热”，Jev 更新当前方案；也可直接点衣服、画风。
+3. 选 Xmax 后点击开始，在连续视频中更新方案；选阿里云后点击“拍一帧”，等待静态结果。
+4. 阿里云可勾选“说完一句后自动生成一张”，每张独立计费，默认关闭。
+5. 保存当前画面，或停止 AI 返回原始镜头。切到后台会关闭镜头与视频会话。
 
-```text
-场景描述 → Jev 1.14 → { outfit, head, prop } → 本地绘制 / 预制造型
-```
+语音依赖浏览器的中文 SpeechRecognition 及其网络服务；不可用时可以打字。天气指令是你说出的冷热描述，不查询真实天气预报。只有实际收到 Xmax 视频首帧后才标记“实时生成”。阿里云结果始终标记“单帧图片”。
 
-`src/wardrobe.mjs` 包含选项和英文判定说明。模型只能选择衣柜内的 ID；非法选项或不完整的概率分布会被拒绝。界面显示模型实际返回的版本和概率，不虚构延迟、准确率或费用。
+## 费用与资源
 
-**离线模式**使用本地关键词规则，不调用模型、不显示模型概率。**手动/随机模式**由用户操作产生。真实接口失败后保留原来的一身，不悄悄回退成假 AI 结果。
+2026-10-16 核对的北京标准价：Qwen Image 2.1 Turbo **0.1 元/张**，100 张约 **10 元**；2.0 为 0.2 元/张，100 张约 20 元。免费额度、活动及其他地域价格以账号为准。[阿里云官方价格](https://help.aliyun.com/zh/model-studio/model-pricing)
 
-## 真人模式的边界
+Xmax 官方 FAQ 说明 X2.0 **1 积分/秒**，600 新用户积分约 10 分钟。本项目单次最多 60 积分。未登录账号的充值价格未能核实，不把积分直接换算成人民币。[Xmax FAQ](https://platform.xmax.ai/docs/resources/faq)
 
-真人是原创 AI 生成的虚构成年人物。8 套造型是预制图片，按整套衣服切换；不是上传自拍、实时换脸、视频或逐件虚拟试穿。单独选择的头饰和道具会保留，并能在两种手绘风格中看到。真人图里的道具属于该预制造型。
+Jev 1.14 输入价为 $0.042/百万 token、输出免费。例如每次输入 1,000 token，100 次约 $0.0042；这是假设用量计算，不是实测账单。[TypeSafe 模型价格](https://docs.typesafe.ai/models)
 
-Jev **没有**生成真人图片和台词；台词由本项目预先编写，图片由独立图像生成工具制作。当前使用文本 Choice，未使用仍处于实验阶段的图像/Box 接口。
+本机不下载模型权重，不进行本地图像推理。摄像头请求 640×480 / 15fps；Xmax 输入按模型最小尺寸规则调整，因此实际编码/输出尺寸可能更大。SDK 只在点击启动 Xmax 后加载；关闭客户端插帧、录制和音频采集。当前浏览器未找到实体摄像头，完整运行内存及视频延迟尚未实测。
 
-## 数据和部署
+## 请求与停止边界
 
-- 收藏只保存三个衣柜 ID 和画风，不保存 Key 或场景文本。
-- 本地服务默认只监听 `127.0.0.1`，拒绝跨站写入；每个地址每分钟最多 20 次调用。
-- 静态在线版本无需后端，提供离线试玩及本地安装指引。真实调用在本地版使用自己的 Key，在线站不提供公共共享 Key。
-- 不要把 `.env`、Key 或私有资料放进公开仓库。不要把开发服务直接当作公网多用户 API。
-- GitHub Pages 可从 `main` 分支根目录发布。没有构建步骤，`.nojekyll` 已包含。
+- 摄像头默认仅本机预览。勾选“结合当前穿着”后，请求 Jev 时会发送一帧缩小 JPEG；该视觉接口仍为实验功能。
+- Xmax 开始后传输连续视频。临时 Key 有效期 90 秒、额度 60 积分；页面限 60 秒，后端同时定时撤销凭据。停止时关闭 SDK、轨道副本和视图，再请求撤销。网络断开时不能保证即时撤销，额度和到期仍作兜底。
+- 阿里云一次仅一张，全局最多一项生成、两次请求间隔至少 10 秒。停止显示不保证取消云端已提交任务，可能仍计费；不自动重试或切换到另一家产生费用。
+- 连续语音只保留一个运行任务和最新一条待执行指令，过时结果不覆盖新选择。
+- 不在服务端保存照片、视频、Key 或生成历史；生成图仅在当前页面内存中显示，旧 Blob URL 会释放。提供保存按钮供使用者自行下载。
+- 本地服务限定环回访问，拒绝跨站写入与非本机 Host，不提供用户输入 URL 的下载代理。不要直接作为公网多用户服务部署。
+
+## 开发与验证
 
 ```sh
+npm run build
 npm run check
 npm test
+npm audit
 ```
 
-## 项目结构
+`providers.mjs` 包含 Xmax 临时凭据和阿里云图像接口；`src/xmax-session.mjs` 包含 SDK 连接、更新及释放；`src/live.js` 连接镜头、语音、Jev 和提供方。具体实测、限制和参考来源见 [验证记录](docs/validation.md)。
 
-```text
-index.html             页面
-src/styles.css         浅色布局和响应式
-src/wardrobe.mjs        衣柜、请求构造和响应校验
-src/portrait.mjs        两种原创 SVG 角色和衣物
-src/app.js             交互、收藏、导出和直连
-server.mjs             无依赖本地服务与安全代理
-assets/real-looks.png   8 格真人造型素材
-docs/                  参考来源与素材说明
-tests/                 请求边界、响应校验与服务器检查
-```
-
-## 参考与原创
-
-参考“说场景 → 选择衣服 → 展示造型”的产品模式。我们做了自己的三画风角色、职场幽默、画面布局和实现，没有复制参考视频、人物素材或参考项目代码。相关项目及准确边界见 [参考记录](docs/references.md)，素材生成说明见 [素材说明](docs/assets.md)。
-
-MIT License。JevLand 为独立中文社区，本项目与 TypeSafe 无隶属关系。
-
----
-
-**English:** A light, playful dress-up lab with three visual styles. Jev 1.14 selects an outfit, headwear and a prop in one typed-decision call. Two original SVG characters support combinatorial dressing; the photo mode uses eight pre-generated fictional-person looks. The public static site is an offline playground. Run locally with a server-side key or an in-memory bring-your-own key for live decisions. Node 20+, no dependencies. `npm start` and open port 8894.
+MIT License。原创布局与角色提示词；使用官方 SDK 和官方 API，未复制参考视频、参考项目代码或人物。JevLand 为独立中文社区，与 TypeSafe 无隶属关系。
